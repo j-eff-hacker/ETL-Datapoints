@@ -1,0 +1,82 @@
+with open("sensor_dump.txt", "w") as sensor_dump_file:
+    sensor_dump_file.write("TIMESTAMP:2026-02-12|ID:E-616|SCORE:95|STATUS:ACTIVE\n")
+    sensor_dump_file.write("TIMESTAMP:2026-02-12|ID:E-838|SCORE:40|STATUS:ACTIVE\n")
+    sensor_dump_file.write("ERROR:SENSOR_MALFUNCTION|CODE:404\n")
+    sensor_dump_file.write("TIMESTAMP:2026-02-12|ID:E-1610|SCORE:120|STATUS:ACTIVE\n")
+    sensor_dump_file.write("TIMESTAMP:2026-02-12|ID:E-X|SCORE:NONE|STATUS:UNKNOWN\n")
+    sensor_dump_file.write("TIMESTAMP:2026-02-12|ID:E-199999|SCORE:85|STATUS:ACTIVE\n")
+    sensor_dump_file.write("EMPTY_LINE")
+    sensor_dump_file.write("TIMESTAMP:2026-02-12|ID:E-2149|SCORE:110|STATUS:ACTIVE\n")
+
+import numpy as numpy
+
+def extraction(raw_file) -> dict:
+
+    extracted_data = {"ID" : [],
+                      "SCORE" : []}
+    
+    with open(raw_file, "r") as raw_file:
+        for line in raw_file:
+            if line.startswith("TIMESTAMP"):
+                raw_data = line.split("|")
+                for data in raw_data:
+                    if data.startswith("ID"):
+                        ID = data.split(":")[1]
+                    elif data.startswith("SCORE"):
+                        SCORE = data.split(":")[1]
+                extracted_data["ID"].append(ID)
+                extracted_data["SCORE"].append(SCORE)
+        
+        return extracted_data
+
+class Datapoint():
+    def __init__(self,ID, Score):
+        self.ID  = ID
+        self.Score = Score
+    
+    def get_score(self,extracted_data):
+        return extracted_data["SCORE"]
+    
+    def get_ID(self, extracted_data):
+        return extracted_data["ID"]
+    
+    def validate_score(self, extracted_score,extracted_IDs):
+        valid_scores = []
+        valid_IDs = []
+
+        for score in extracted_score:
+            if score != "NONE":
+                valid_scores.append(int(score))
+                valid_IDs.append(extracted_IDs[extracted_score.index(score)])
+            else:
+                del extracted_score[extracted_score.index(score)]
+                del extracted_IDs[extracted_score.index(score)]
+        
+        return valid_scores
+        return valid_IDs
+    
+    def store_valid_datapoints(self, valid_scores, valid_IDs):
+
+        valid_datapoints = {"ID" : [],
+                            "SCORE" : []}
+        
+        for score in valid_scores:
+            valid_datapoints["SCORE"].append(score)
+        
+        for ID in valid_IDs:
+            valid_datapoints["ID"].append(ID)
+        
+        return valid_datapoints
+
+if __name__ == "__main__":
+    try:
+        extracted_data = extraction("sensor_dump.txt")
+        raw_datapoints = Datapoint(extracted_data["ID"], extracted_data["SCORE"])
+        raw_scores = raw_datapoints.get_score(extracted_data)
+        raw_IDs = raw_datapoints.get_ID(extracted_data)
+        valid_scores = raw_datapoints.validate_score(raw_scores, raw_IDs)
+        valid_IDs = raw_datapoints.validate_score(raw_scores, raw_IDs)
+        valid_datapoints = raw_datapoints.store_valid_datapoints(valid_scores, valid_IDs)
+    except:
+        print("An error occurred during data extraction and validation."
+
